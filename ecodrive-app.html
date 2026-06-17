@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EcoDrive Connect</title>
+  <meta name="application-name" content="EcoDrive Connect">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EcoDrive">
+  <meta name="theme-color" content="#111a10">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --forest: #2D5A27; --apple: #8DB600; --slate: #E9ECEF;
+      --dark: #111a10; --mid: #3d7a35; --muted: #5a7257;
+      --white: #fff; --text: #1a2e18;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f2ef; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-start; padding: 2rem 1rem;
+    }
+    h1 { font-size: 1rem; color: var(--muted); margin-bottom: 1.5rem; letter-spacing: .05em; }
+
+    /* Phone shell */
+    .phone {
+      width: 375px; min-height: 812px;
+      background: var(--dark); border-radius: 44px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.08);
+      overflow: hidden; position: relative; display: flex; flex-direction: column;
+    }
+    .phone-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .6rem 1.5rem; background: var(--dark); font-size: .75rem; color: rgba(255,255,255,.7);
+    }
+    .phone-bar-icons { display: flex; gap: .4rem; align-items: center; }
+
+    /* Screen system */
+    .screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+    .screen.active { display: flex; }
+
+    /* Home screen */
+    #s-home {
+      background: linear-gradient(175deg, var(--dark) 0%, var(--forest) 55%, #1a3d16 100%);
+    }
+    .home-header { padding: 1.25rem 1.5rem .5rem; }
+    .home-greeting { color: rgba(255,255,255,.6); font-size: .8rem; }
+    .home-name { color: var(--white); font-size: 1.4rem; font-weight: 700; }
+    .home-car-card {
+      margin: 1rem 1.25rem; background: rgba(255,255,255,.07);
+      border: 1px solid rgba(141,182,0,.3); border-radius: 20px; padding: 1.5rem; position: relative; overflow: hidden;
+    }
+    .home-car-card::after {
+      content: '🚗'; position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%);
+      font-size: 4rem; opacity: .4;
+    }
+    .car-label { color: rgba(255,255,255,.5); font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; }
+    .car-model { color: var(--white); font-size: 1.2rem; font-weight: 700; margin: .2rem 0 1rem; }
+    .car-stats { display: flex; gap: 1.5rem; }
+    .cs { }
+    .cs-val { color: var(--apple); font-size: 1.3rem; font-weight: 700; }
+    .cs-lab { color: rgba(255,255,255,.5); font-size: .65rem; text-transform: uppercase; }
+
+    /* Quick actions */
+    .quick-title { color: rgba(255,255,255,.5); font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; padding: .5rem 1.5rem .5rem; }
+    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; padding: 0 1.25rem 1.25rem; }
+    .quick-btn {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(141,182,0,.2);
+      border-radius: 16px; padding: 1.1rem; text-align: center;
+      transition: background .2s, transform .15s; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: .4rem;
+    }
+    .quick-btn:hover { background: rgba(255,255,255,.14); transform: scale(1.02); }
+    .quick-btn:focus-visible { outline: 2px solid var(--apple); outline-offset: 3px; }
+    .quick-icon { font-size: 1.6rem; }
+    .quick-label { color: var(--white); font-size: .78rem; font-weight: 600; }
+    .quick-sub { color: rgba(255,255,255,.4); font-size: .67rem; }
+
+    /* Sustainability screen */
+    #s-sustain {
+      background: var(--white);
+    }
+    .screen-header {
+      background: linear-gradient(135deg, var(--forest), var(--mid));
+      padding: 1.5rem; color: var(--white);
+    }
+    .screen-header h2 { font-size: 1.15rem; font-weight: 700; }
+    .screen-header p { font-size: .8rem; opacity: .75; margin-top: .2rem; }
+    .sustain-body { padding: 1.25rem; flex: 1; overflow-y: auto; }
+    .sustain-score {
+      background: linear-gradient(135deg, var(--dark), var(--forest));
+      border-radius: 16px; padding: 1.5rem; text-align: center; margin-bottom: 1.25rem;
+    }
+    .score-val { font-size: 3rem; font-weight: 700; color: var(--apple); line-height: 1; }
+    .score-lab { color: rgba(255,255,255,.6); font-size: .78rem; margin-top: .3rem; }
+    .score-sub { color: rgba(255,255,255,.4); font-size: .7rem; margin-top: .15rem; }
+    .metric-list { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1.25rem; }
+    .metric { background: var(--slate); border-radius: 12px; padding: 1rem; }
+    .metric-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+    .metric-name { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .metric-val { font-size: .85rem; font-weight: 700; color: var(--forest); }
+    .prog-bar { height: 6px; background: rgba(45,90,39,.15); border-radius: 50px; overflow: hidden; }
+    .prog-fill { height: 100%; background: linear-gradient(90deg, var(--forest), var(--apple)); border-radius: 50px; transition: width .6s ease; }
+    .badges-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .eco-badge {
+      background: rgba(45,90,39,.1); color: var(--forest);
+      border: 1px solid rgba(45,90,39,.2); border-radius: 50px;
+      padding: .4rem .85rem; font-size: .72rem; font-weight: 700;
+    }
+
+    /* Service screen */
+    #s-service { background: var(--white); }
+    .service-body { padding: 1.25rem; flex: 1; overflow-y: auto; }
+    .biometric-prompt {
+      background: linear-gradient(135deg, var(--dark), var(--forest));
+      border-radius: 16px; padding: 1.5rem; text-align: center; margin-bottom: 1.25rem;
+    }
+    .bio-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .bio-title { color: var(--white); font-weight: 700; font-size: 1rem; margin-bottom: .3rem; }
+    .bio-sub { color: rgba(255,255,255,.55); font-size: .78rem; margin-bottom: 1rem; }
+    .bio-btn {
+      background: var(--apple); color: var(--dark); border: none;
+      padding: .65rem 1.75rem; border-radius: 50px; font-weight: 700; font-size: .875rem;
+      cursor: pointer; transition: background .2s;
+    }
+    .bio-btn:hover { background: #a0d000; }
+    .bio-btn:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
+    #bio-status { color: var(--apple); font-size: .78rem; margin-top: .5rem; min-height: 1.2em; }
+    .service-slots { display: flex; flex-direction: column; gap: .7rem; }
+    .slot {
+      border: 1.5px solid rgba(45,90,39,.2); border-radius: 12px; padding: 1rem;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: border-color .2s, background .2s; cursor: pointer;
+    }
+    .slot:hover { border-color: var(--apple); background: rgba(141,182,0,.05); }
+    .slot.selected { border-color: var(--forest); background: rgba(45,90,39,.08); }
+    .slot:focus-visible { outline: 2px solid var(--apple); outline-offset: 3px; border-radius: 12px; }
+    .slot-info { }
+    .slot-date { font-weight: 700; font-size: .9rem; color: var(--text); }
+    .slot-time { font-size: .78rem; color: var(--muted); }
+    .slot-cert { font-size: .68rem; color: var(--apple); font-weight: 600; }
+    .slot-radio { width: 18px; height: 18px; border: 2px solid rgba(45,90,39,.3); border-radius: 50%; flex-shrink: 0; transition: .2s; }
+    .slot.selected .slot-radio { background: var(--forest); border-color: var(--forest); }
+    .book-btn {
+      width: 100%; background: var(--forest); color: var(--white);
+      border: none; padding: .85rem; border-radius: 12px; font-weight: 700; font-size: .95rem;
+      margin-top: 1rem; cursor: pointer; transition: background .2s;
+    }
+    .book-btn:hover { background: var(--mid); }
+    .book-btn:focus-visible { outline: 2px solid var(--apple); outline-offset: 3px; }
+    #book-confirm { display: none; background: #e8f5e9; border: 1px solid var(--apple); border-radius: 10px; padding: .75rem 1rem; color: var(--forest); font-weight: 600; font-size: .82rem; margin-top: .75rem; text-align: center; }
+
+    /* Remote control screen */
+    #s-remote { background: var(--white); }
+    .remote-body { padding: 1.25rem; flex: 1; }
+    .remote-car {
+      background: linear-gradient(135deg, var(--dark), var(--forest));
+      border-radius: 16px; padding: 1.5rem; text-align: center; margin-bottom: 1.25rem;
+    }
+    .remote-car-icon { font-size: 3.5rem; margin-bottom: .5rem; }
+    .remote-car-name { color: var(--white); font-weight: 700; }
+    .remote-car-status { color: rgba(255,255,255,.55); font-size: .78rem; }
+    .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .ctrl-btn {
+      background: var(--slate); border: 1.5px solid rgba(45,90,39,.15);
+      border-radius: 14px; padding: 1.1rem; text-align: center;
+      cursor: pointer; transition: .2s;
+    }
+    .ctrl-btn:hover { border-color: var(--apple); background: rgba(141,182,0,.08); }
+    .ctrl-btn:focus-visible { outline: 2px solid var(--apple); outline-offset: 3px; }
+    .ctrl-btn.active { border-color: var(--forest); background: rgba(45,90,39,.1); }
+    .ctrl-icon { font-size: 1.6rem; margin-bottom: .4rem; }
+    .ctrl-label { font-size: .8rem; font-weight: 600; color: var(--text); }
+    .ctrl-state { font-size: .68rem; color: var(--muted); margin-top: .15rem; }
+
+    /* Charge bar */
+    .charge-card { background: var(--slate); border-radius: 14px; padding: 1.1rem; margin-bottom: .75rem; }
+    .charge-top { display: flex; justify-content: space-between; margin-bottom: .6rem; }
+    .charge-label { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .charge-pct { font-size: .85rem; font-weight: 700; color: var(--forest); }
+    .charge-bar { height: 10px; background: rgba(45,90,39,.15); border-radius: 50px; overflow: hidden; }
+    .charge-fill { height: 100%; background: linear-gradient(90deg, var(--forest), var(--apple)); border-radius: 50px; width: 74%; }
+    .charge-eta { font-size: .72rem; color: var(--muted); margin-top: .4rem; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      display: flex; background: var(--dark);
+      border-top: 1px solid rgba(255,255,255,.08); padding: .6rem 0 .4rem;
+    }
+    .nav-tab {
+      flex: 1; text-align: center; padding: .4rem .25rem;
+      cursor: pointer; transition: color .2s; border: none; background: none;
+    }
+    .nav-tab:focus-visible { outline: 2px solid var(--apple); border-radius: 4px; }
+    .nav-tab-icon { font-size: 1.25rem; display: block; }
+    .nav-tab-label { font-size: .58rem; color: rgba(255,255,255,.4); display: block; margin-top: .15rem; }
+    .nav-tab.active .nav-tab-label { color: var(--apple); }
+  </style>
+</head>
+<body>
+<!-- Install banner (appears automatically on Android Chrome) -->
+<div id="install-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
+  background:#2D5A27; color:#fff; padding:.75rem 1.25rem; align-items:center; gap:1rem;
+  justify-content:space-between; font-family:system-ui,sans-serif; font-size:.875rem;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);">
+  <span>🌿 Install <strong>EcoDrive Connect</strong> on your phone</span>
+  <button onclick="installApp()" style="background:#8DB600;color:#111;border:none;padding:.45rem 1rem;
+    border-radius:50px;font-weight:700;font-size:.8rem;cursor:pointer;">Install</button>
+</div>
+<h1>EcoDrive Connect — Mobile App Prototype</h1>
+<div class="phone" role="main" aria-label="EcoDrive Connect mobile application">
+  <!-- Status bar -->
+  <div class="phone-bar" aria-hidden="true">
+    <span>9:41</span>
+    <div class="phone-bar-icons">
+      <span>●●●</span><span>WiFi</span><span>🔋</span>
+    </div>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div class="screen active" id="s-home" role="region" aria-label="Home dashboard">
+    <div class="home-header">
+      <div class="home-greeting">Good morning,</div>
+      <div class="home-name">Seth 👋</div>
+    </div>
+    <div class="home-car-card" aria-label="Your vehicle — Terra Sedan stats">
+      <div class="car-label">Your Vehicle</div>
+      <div class="car-model">Terra Sedan</div>
+      <div class="car-stats">
+        <div class="cs"><div class="cs-val">74%</div><div class="cs-lab">Charge</div></div>
+        <div class="cs"><div class="cs-val">451 km</div><div class="cs-lab">Range</div></div>
+        <div class="cs"><div class="cs-val">🔒</div><div class="cs-lab">Locked</div></div>
+      </div>
+    </div>
+    <div class="quick-title">Quick Controls</div>
+    <div class="quick-grid" role="list">
+      <button class="quick-btn" role="listitem" onclick="goTo('s-remote')" aria-label="Remote control">
+        <span class="quick-icon">🔑</span>
+        <span class="quick-label">Remote</span>
+        <span class="quick-sub">Lock · Climate · Charge</span>
+      </button>
+      <button class="quick-btn" role="listitem" onclick="goTo('s-sustain')" aria-label="Sustainability tracker">
+        <span class="quick-icon">🌿</span>
+        <span class="quick-label">Sustainability</span>
+        <span class="quick-sub">CO₂ saved · Lifecycle</span>
+      </button>
+      <button class="quick-btn" role="listitem" onclick="goTo('s-service')" aria-label="Service scheduling">
+        <span class="quick-icon">🔧</span>
+        <span class="quick-label">Service</span>
+        <span class="quick-sub">Book maintenance</span>
+      </button>
+      <button class="quick-btn" role="listitem" aria-label="View material lifecycle">
+        <span class="quick-icon">♻️</span>
+        <span class="quick-label">Lifecycle</span>
+        <span class="quick-sub">Material origins</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- REMOTE CONTROL -->
+  <div class="screen" id="s-remote" role="region" aria-label="Remote vehicle controls">
+    <div class="screen-header">
+      <h2>Remote Control</h2>
+      <p>Terra Sedan · Last updated just now</p>
+    </div>
+    <div class="remote-body">
+      <div class="remote-car" aria-hidden="true">
+        <div class="remote-car-icon">🚗</div>
+        <div class="remote-car-name">Terra Sedan</div>
+        <div class="remote-car-status">All systems normal</div>
+      </div>
+      <div class="charge-card" aria-label="Charge status: 74 percent. Full charge in approximately 1 hour 20 minutes.">
+        <div class="charge-top">
+          <span class="charge-label">⚡ Charging Status</span>
+          <span class="charge-pct">74%</span>
+        </div>
+        <div class="charge-bar"><div class="charge-fill"></div></div>
+        <div class="charge-eta">Full charge in ~1hr 20min</div>
+      </div>
+      <div class="controls-grid" role="group" aria-label="Vehicle controls">
+        <button class="ctrl-btn" id="lock-btn" onclick="toggleCtrl('lock-btn','🔒','🔓','Locked','Unlocked')" aria-pressed="true" aria-label="Lock / unlock vehicle">
+          <div class="ctrl-icon" id="lock-icon">🔒</div>
+          <div class="ctrl-label">Lock / Unlock</div>
+          <div class="ctrl-state" id="lock-state">Locked</div>
+        </button>
+        <button class="ctrl-btn" id="climate-btn" onclick="toggleCtrl('climate-btn','❄️','🌡️','Climate Off','Climate On')" aria-pressed="false" aria-label="Toggle climate control">
+          <div class="ctrl-icon" id="climate-icon">❄️</div>
+          <div class="ctrl-label">Climate</div>
+          <div class="ctrl-state" id="climate-state">Climate Off</div>
+        </button>
+        <button class="ctrl-btn" id="charge-btn" onclick="toggleCtrl('charge-btn','⚡','⏸️','Charging','Paused')" aria-pressed="true" aria-label="Toggle charging">
+          <div class="ctrl-icon" id="charge-icon">⚡</div>
+          <div class="ctrl-label">Charging</div>
+          <div class="ctrl-state" id="charge-state">Charging</div>
+        </button>
+        <button class="ctrl-btn" id="lights-btn" onclick="toggleCtrl('lights-btn','💡','🔦','Lights On','Lights Off')" aria-pressed="false" aria-label="Toggle lights">
+          <div class="ctrl-icon" id="lights-icon">💡</div>
+          <div class="ctrl-label">Lights</div>
+          <div class="ctrl-state" id="lights-state">Lights On</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUSTAINABILITY -->
+  <div class="screen" id="s-sustain" role="region" aria-label="Sustainability tracker">
+    <div class="screen-header">
+      <h2>🌿 Sustainability Tracker</h2>
+      <p>Your environmental impact this month</p>
+    </div>
+    <div class="sustain-body">
+      <div class="sustain-score" aria-label="Eco score: 87 out of 100. Top 12 percent of EcoDrive owners.">
+        <div class="score-val">87</div>
+        <div class="score-lab">Eco Score</div>
+        <div class="score-sub">Top 12% of EcoDrive owners 🏆</div>
+      </div>
+      <div class="metric-list" role="list" aria-label="Sustainability metrics">
+        <div class="metric" role="listitem">
+          <div class="metric-top">
+            <span class="metric-name">CO₂ Avoided</span>
+            <span class="metric-val">412 kg</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" style="width:82%" role="progressbar" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100" aria-label="82 percent of monthly goal"></div></div>
+        </div>
+        <div class="metric" role="listitem">
+          <div class="metric-top">
+            <span class="metric-name">Recyclability Lifecycle</span>
+            <span class="metric-val">94%</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" style="width:94%" role="progressbar" aria-valuenow="94" aria-valuemin="0" aria-valuemax="100" aria-label="94 percent recyclable"></div></div>
+        </div>
+        <div class="metric" role="listitem">
+          <div class="metric-top">
+            <span class="metric-name">Ocean Plastic Offset</span>
+            <span class="metric-val">28 kg</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" style="width:56%" role="progressbar" aria-valuenow="56" aria-valuemin="0" aria-valuemax="100" aria-label="56 percent of target"></div></div>
+        </div>
+        <div class="metric" role="listitem">
+          <div class="metric-top">
+            <span class="metric-name">Renewable Charging</span>
+            <span class="metric-val">91%</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" style="width:91%" role="progressbar" aria-valuenow="91" aria-valuemin="0" aria-valuemax="100" aria-label="91 percent renewable"></div></div>
+        </div>
+      </div>
+      <div class="badges-row" role="list" aria-label="Earned badges">
+        <div class="eco-badge" role="listitem">🌊 Ocean Guardian</div>
+        <div class="eco-badge" role="listitem">⚡ Solar Driver</div>
+        <div class="eco-badge" role="listitem">♻️ Circular Hero</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICE -->
+  <div class="screen" id="s-service" role="region" aria-label="Service scheduling">
+    <div class="screen-header">
+      <h2>🔧 Book Service</h2>
+      <p>Circular-economy certified centres</p>
+    </div>
+    <div class="service-body">
+      <div class="biometric-prompt">
+        <div class="bio-icon" aria-hidden="true">👆</div>
+        <div class="bio-title">Biometric Login Required</div>
+        <div class="bio-sub">Authenticate to confirm your booking identity</div>
+        <button class="bio-btn" onclick="doBiometric()" aria-label="Authenticate with fingerprint">Use Fingerprint</button>
+        <div id="bio-status" role="status" aria-live="polite"></div>
+      </div>
+      <div class="service-slots" id="slots" role="radiogroup" aria-label="Available service slots">
+        <div class="slot" tabindex="0" onclick="selectSlot(this)" onkeydown="if(event.key==='Enter'||event.key===' ')selectSlot(this)" role="radio" aria-checked="false">
+          <div class="slot-info">
+            <div class="slot-date">Mon 23 Jun 2026</div>
+            <div class="slot-time">9:00 AM – 11:00 AM</div>
+            <div class="slot-cert">✓ EcoCertified Centre — Brisbane North</div>
+          </div>
+          <div class="slot-radio" aria-hidden="true"></div>
+        </div>
+        <div class="slot" tabindex="0" onclick="selectSlot(this)" onkeydown="if(event.key==='Enter'||event.key===' ')selectSlot(this)" role="radio" aria-checked="false">
+          <div class="slot-info">
+            <div class="slot-date">Wed 25 Jun 2026</div>
+            <div class="slot-time">1:00 PM – 3:00 PM</div>
+            <div class="slot-cert">✓ EcoCertified Centre — Fortitude Valley</div>
+          </div>
+          <div class="slot-radio" aria-hidden="true"></div>
+        </div>
+        <div class="slot" tabindex="0" onclick="selectSlot(this)" onkeydown="if(event.key==='Enter'||event.key===' ')selectSlot(this)" role="radio" aria-checked="false">
+          <div class="slot-info">
+            <div class="slot-date">Fri 27 Jun 2026</div>
+            <div class="slot-time">8:00 AM – 10:00 AM</div>
+            <div class="slot-cert">✓ EcoCertified Centre — South Bank</div>
+          </div>
+          <div class="slot-radio" aria-hidden="true"></div>
+        </div>
+        <button class="book-btn" onclick="bookService()" aria-label="Confirm service booking">Confirm Booking</button>
+        <div id="book-confirm" role="status" aria-live="polite">✓ Booking confirmed! You'll receive a reminder 24hrs before.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" aria-label="App navigation">
+    <button class="nav-tab active" id="tab-home" onclick="goTo('s-home');setTab(this)" aria-label="Home" aria-current="page">
+      <span class="nav-tab-icon">🏠</span>
+      <span class="nav-tab-label">Home</span>
+    </button>
+    <button class="nav-tab" id="tab-remote" onclick="goTo('s-remote');setTab(this)" aria-label="Remote controls">
+      <span class="nav-tab-icon">🔑</span>
+      <span class="nav-tab-label">Remote</span>
+    </button>
+    <button class="nav-tab" id="tab-sustain" onclick="goTo('s-sustain');setTab(this)" aria-label="Sustainability">
+      <span class="nav-tab-icon">🌿</span>
+      <span class="nav-tab-label">Eco</span>
+    </button>
+    <button class="nav-tab" id="tab-service" onclick="goTo('s-service');setTab(this)" aria-label="Service">
+      <span class="nav-tab-icon">🔧</span>
+      <span class="nav-tab-label">Service</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+  const screens = ['s-home','s-remote','s-sustain','s-service'];
+  const tabs = ['tab-home','tab-remote','tab-sustain','tab-service'];
+
+  function goTo(id) {
+    screens.forEach(s => {
+      const el = document.getElementById(s);
+      el.classList.remove('active');
+      el.setAttribute('aria-hidden','true');
+    });
+    const target = document.getElementById(id);
+    target.classList.add('active');
+    target.removeAttribute('aria-hidden');
+    // sync tab
+    const idx = screens.indexOf(id);
+    tabs.forEach((t,i) => {
+      const btn = document.getElementById(t);
+      btn.classList.toggle('active', i===idx);
+      if(i===idx) btn.setAttribute('aria-current','page');
+      else btn.removeAttribute('aria-current');
+    });
+    target.scrollTop = 0;
+  }
+
+  function setTab(btn) {
+    tabs.forEach(t => document.getElementById(t).classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Remote control toggle
+  const states = {};
+  function toggleCtrl(id, iconA, iconB, labelA, labelB) {
+    states[id] = !states[id];
+    const btn = document.getElementById(id);
+    btn.classList.toggle('active', states[id]);
+    btn.setAttribute('aria-pressed', String(states[id]));
+    document.getElementById(id.replace('-btn','-icon')).textContent = states[id] ? iconB : iconA;
+    document.getElementById(id.replace('-btn','-state')).textContent = states[id] ? labelB : labelA;
+  }
+
+  // Biometric
+  function doBiometric() {
+    const s = document.getElementById('bio-status');
+    s.textContent = 'Authenticating…';
+    setTimeout(() => { s.textContent = '✓ Identity confirmed'; }, 1200);
+  }
+
+  // Service slots
+  function selectSlot(el) {
+    document.querySelectorAll('.slot').forEach(s => {
+      s.classList.remove('selected');
+      s.setAttribute('aria-checked','false');
+    });
+    el.classList.add('selected');
+    el.setAttribute('aria-checked','true');
+  }
+
+  function bookService() {
+    const sel = document.querySelector('.slot.selected');
+    const conf = document.getElementById('book-confirm');
+    if (!sel) { alert('Please select a service slot.'); return; }
+    conf.style.display = 'block';
+  }
+
+  // Init aria-hidden on inactive screens
+  screens.forEach(s => {
+    if(s !== 's-home') document.getElementById(s).setAttribute('aria-hidden','true');
+  });
+</script>
+<script>
+  // Register service worker for PWA offline support
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('EcoDrive SW registered'))
+        .catch(e => console.log('SW error:', e));
+    });
+  }
+
+  // Android Chrome install prompt
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('install-banner');
+    if (banner) banner.style.display = 'flex';
+  });
+
+  window.addEventListener('appinstalled', () => {
+    const banner = document.getElementById('install-banner');
+    if (banner) banner.style.display = 'none';
+    deferredPrompt = null;
+  });
+
+  function installApp() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+    }
+  }
+</script>
+</body>
+</html>
