@@ -1,6 +1,6 @@
 const CACHE = 'ecodrive-v1';
 const ASSETS = [
-  './ecodrive-app.html',
+  './index.html',
   './manifest.json'
 ];
 
