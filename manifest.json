@@ -2,7 +2,7 @@
   "name": "EcoDrive Connect",
   "short_name": "EcoDrive",
   "description": "EcoDrive Automotive — Vehicle management & sustainability tracker",
-  "start_url": "./ecodrive-app.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#111a10",
@@ -27,13 +27,13 @@
       "name": "Remote Control",
       "short_name": "Remote",
       "description": "Control your vehicle remotely",
-      "url": "./ecodrive-app.html#remote"
+      "url": "./index.html#remote"
     },
     {
       "name": "Eco Tracker",
       "short_name": "Eco",
       "description": "View your sustainability score",
-      "url": "./ecodrive-app.html#sustain"
+      "url": "./index.html#sustain"
     }
   ]
 }
